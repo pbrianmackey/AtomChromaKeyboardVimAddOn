@@ -1,0 +1,13 @@
+{
+  "name": "AddOn",
+  "version": "0.0.0",
+  "description": "Node addon",
+  "main": "hello.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "install": "node-gyp rebuild"
+  },
+  "author": "Brian Mackey",
+  "license": "ISC",
+  "gypfile": true
+}
