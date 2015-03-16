@@ -14,12 +14,30 @@ using namespace ChromaSDK::Keyboard;
 //Global variables
 HMODULE hModule = NULL;                         // Chroma SDK module handle
 const COLORREF RED = RGB(255,0,0);
+IAudioMeterInformation *pMeterInfo = NULL;
 
+#ifdef _WIN64
+#define CHROMASDKDLL        _T("RzChromaSDK64.dll")
+#else
+#define CHROMASDKDLL        _T("RzChromaSDK.dll")
+#endif
+
+typedef RZRESULT (*INIT)(void);
+/*
+typedef RZRESULT (*UNINIT)(void);
+typedef RZRESULT (*CREATEKEYBOARDCUSTOMGRIDEFFECTS)(ChromaSDK::Keyboard::CUSTOM_GRID_EFFECT_TYPE CustomEffects, RZEFFECTID *pEffectId);
+typedef RZRESULT (*CREATEMOUSECUSTOMEFFECTS)(ChromaSDK::Mouse::CUSTOM_EFFECT_TYPE CustomEffect, RZEFFECTID *pEffectId);
+typedef RZRESULT (*DELETEEFFECT)(RZEFFECTID EffectId);
+typedef RZRESULT (*SETEFFECT)(RZEFFECTID EffectId);*/
+
+//forward declarations
+void        InitStuff();
 void				CustomLogic();
 typedef RZRESULT (*CREATEKEYBOARDCUSTOMGRIDEFFECTS)(ChromaSDK::Keyboard::CUSTOM_GRID_EFFECT_TYPE CustomEffects, RZEFFECTID *pEffectId);
 
 Handle<Value> Method(const Arguments& args) {
   HandleScope scope;
+  InitStuff();
   CustomLogic();
   return scope.Close(String::New("here is some output"));
 }
@@ -27,6 +45,60 @@ Handle<Value> Method(const Arguments& args) {
 void init(Handle<Object> target) {
   target->Set(String::NewSymbol("methodName"),
       FunctionTemplate::New(Method)->GetFunction());
+}
+
+void InitStuff()
+{
+  hModule = LoadLibrary(CHROMASDKDLL);
+  if(hModule)
+  {
+      INIT Init = (INIT)GetProcAddress(hModule, "Init");
+      if(Init)
+      {
+        Init();
+      }
+  }
+  /*
+  CoInitialize(NULL);
+
+    // Get enumerator for audio endpoint devices.
+    IMMDeviceEnumerator *pEnumerator = NULL;
+    HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator),
+                                  NULL, CLSCTX_INPROC_SERVER,
+                                  __uuidof(IMMDeviceEnumerator),
+                                  (void**)&pEnumerator);
+
+    if(FAILED(hr)) goto Exit;
+
+    // Get peak meter for default audio-rendering device.
+    IMMDevice *pDevice = NULL;
+    hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice);
+
+    if(FAILED(hr)) goto Exit;
+
+    hr = pDevice->Activate(__uuidof(IAudioMeterInformation),
+                           CLSCTX_ALL, NULL, (void**)&pMeterInfo);
+
+    if(FAILED(hr)) goto Exit;
+
+    if(pMeterInfo)
+    {
+        //SetTimer(hWnd, 1, 100, NULL);
+    }
+
+Exit:
+
+    if(pDevice)
+    {
+        pDevice->Release();
+        pDevice = NULL;
+    }
+
+    if(pEnumerator)
+    {
+        pEnumerator->Release();
+        pEnumerator = NULL;
+    }*/  //I dont think I need any of this
 }
 
 void CustomLogic()
@@ -58,10 +130,12 @@ void CustomLogic()
 		}
 
 	}
-  //This line does not work for some reason
-  std::cout << "About to modify keyboard...";
+
   try{
-	  CreateKeyboardCustomGridEffects(Grid, nullptr);  //This line is broken
+	  CreateKeyboardCustomGridEffects(Grid, nullptr);//No exception, keyboard is not changing either
+    std::cout << "modified keyboard. Sleeping thread";
+    /*Sleep(4000);
+    std::cout << "done sleeping.";*/
   }catch(const std::exception &exc) {
      std::cout << exc.what();
   }catch(...){
